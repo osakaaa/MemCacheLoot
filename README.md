@@ -11,5 +11,6 @@ Simple utility to check  memcached services for anonymous read/write access and 
 ###Requirements
 It requires the following python modules to work:
 - IPy
-- memcache
+- python-memcached
+
 Both can be installed with PIP
