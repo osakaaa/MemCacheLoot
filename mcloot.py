@@ -66,7 +66,7 @@ if __name__ == "__main__":
 	if mode == mode_check:
 		for ip in ipList:
 			print "Testing IP %s" % ip
-			s = memcache.Client(["%s:%s" % (ip,"11211")])
+			s = memcache.Client(["%s:%s" % (ip,port)])
 			#print "Trying to set and request test parameter\n"
 			s.set(WRITE_CHECKER[0],WRITE_CHECKER[1])
 			r = s.get(WRITE_CHECKER[0])
