@@ -13,7 +13,7 @@ LOOTMODE = [mode_info, mode_loot, mode_write]
 
 def cmd():
 	parser = argparse.ArgumentParser(description='Simple looting tool for memcached services')	
-	parser.add_argument('-t','--target', required=True, help='Specify target. It can be single host, or range of hosts, separated by hyphen. For now, only /24 net will scan n')
+	parser.add_argument('-t','--target', required=True, help='Specify target. It can be single host, or range of hosts, separated by hyphen. For now, only /24 nets are supported')
 	parser.add_argument('-p','--port', default ="11211", help='Specify target port. By default 11211 is used\n')
 	parser.add_argument('-m','--mode', default = mode_info, choices=LOOTMODE, help='Specify working mode. By default it tries to read all the possible data')
 	parser.add_argument('-k','--key', default = None, help='Required only for %s mode. Key to write data to' % (mode_write))
@@ -112,7 +112,6 @@ def parse_stat(resp):
 	resp_list = resp.split("\r\n")[:-2]
 	return [x.strip("STAT ").split(" ") for x in resp_list]
 
-
 if __name__ == "__main__":
 	ipList, port, mode, key_to_write, value_to_write, output = cmd()
 	toFile = False
@@ -123,6 +122,8 @@ if __name__ == "__main__":
 		except Exception:
 			print "\t[-] Filename is not valid: %s" % (output)
 			sys.exit(-1)
+	socket.setdefaulttimeout(3)
+
 	if mode == mode_info:
 		for ip in ipList:
 			print "\t[!] Getting info on MemCache from %s" % ip
@@ -179,7 +180,6 @@ if __name__ == "__main__":
 		if toFile: f.close()
 
 	if mode == mode_write:
-			socket.setdefaulttimeout(3)
 			s = socket.socket()
 			s.connect((ipList[0],port))
 			#Set key:value to store for 900000ms (some random int =)) 
