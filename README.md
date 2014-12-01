@@ -7,9 +7,7 @@ Simple utility to perform some looting (and also write/rewrite) operations on me
 python mcloot.py [-h] -t TARGET [-p PORT] [-m {info,loot,write}] [-k KEY]
                  [-v VALUE] [-o OUTPUT]
 
-Simple looting tool for memcached services
-
-optional arguments:
+Optional arguments:
   -h, --help            show this help message and exit
   
   -t TARGET, --target TARGET
