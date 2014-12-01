@@ -30,9 +30,13 @@ Optional arguments:
                         By default loot will be used
                       
   -k KEY, --key KEY     
+  
                         Required only for write mode. Key to write data to
+                        
   -v VALUE, --value VALUE
+  
                         Required only for write mode. Data to write for specified key
+                        
   -o OUTPUT, --output OUTPUT
   
                         File to write the output
