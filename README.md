@@ -16,6 +16,7 @@ Optional arguments:
                         hosts, separated by hyphen. For now, only /24 nets is supported
                         
   -p PORT, --port PORT  
+  
                         Specify target port. By default 11211 is used
   
   -m {info,loot,write}, --mode {info,loot,write}
