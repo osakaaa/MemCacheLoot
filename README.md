@@ -12,8 +12,7 @@ Optional arguments:
   
   -t TARGET, --target TARGET
   
-                        Specify target. It can be single host, or range of
-                        hosts, separated by hyphen. For now, only /24 nets is supported
+                        Specify target. It can be single host, or range of hosts, separated by hyphen. For now, only /24 nets are supported
                         
   -p PORT, --port PORT  
   
@@ -43,6 +42,4 @@ Optional arguments:
                         
 ###Requirements
 It requires the following python modules to work:
-- IPy
-
-Can be installed with PIP
+- IPy (Can be installed with PIP)
