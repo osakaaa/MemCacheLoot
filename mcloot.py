@@ -18,7 +18,7 @@ def cmd():
 	parser.add_argument('-m','--mode', default = mode_info, choices=LOOTMODE, help='Specify working mode. By default it tries to read all the possible data')
 	parser.add_argument('-k','--key', default = None, help='Key to write data to')
 	parser.add_argument('-v','--value', default = None, help='Data to write for specified key')
-	parser.add_argument('-o','--output', help='File to write the output')
+	parser.add_argument('-o','--output',required=True, help='File to write the output')
 
 	args= parser.parse_args()
 
@@ -123,7 +123,6 @@ if __name__ == "__main__":
 				for line in parse_stat(resp):
 					f.write("\t[+] %s : %s\r\n" % (line[0], line[1]))
 				f.close()
-			#Second, we try to read value for each found key
 			s.close()
 	if mode == mode_loot:
 		keys = []
@@ -138,7 +137,7 @@ if __name__ == "__main__":
 			s.send(mc_cmd)
 			resp = ""
 			resp = s.recv(1024)
-			#Here we truncate the last two items because of END singnature
+			# [:-2] Because of END\r\n line
 			for item in resp.split("\r\n")[:-2]:
 				keys.append(item.split(" ")[1])
 			print "\t\t[+]Found %d items: %s" % (len(keys), ', '.join((keys)))
@@ -150,7 +149,7 @@ if __name__ == "__main__":
 				resp = s.recv(1024)
 				if toFile: f.write("\t[+] %s : %s\r\n" % (parse_key(resp)))
 			s.close()
-			if toFile: f.close()
+		if toFile: f.close()
 
 	if mode == mode_write:
 			socket.setdefaulttimeout(3)
